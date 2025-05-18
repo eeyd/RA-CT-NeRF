@@ -1,0 +1,167 @@
+# training
+max_iter : 40000 ##200000
+eval_iter: 40000
+save_iter: 10000
+log_iter : 100
+bs_train : 1024  # batch size 
+bs_eval  : 32768
+bs_test  : $bs_eval
+N_eval   : 
+lr       : 0.001 ## 0.002
+lr_final : 0.001 ## 0.00002
+workers  : 4
+
+z_scaler : 1
+always_save: True
+alternating_training: absent
+only_downsampling_in_z: False 
+direction: axial
+
+# modeling
+stype     : cube
+radius    : 2
+n_samples : 64
+n_imps    : 64
+mtype     : NGPMLP
+
+# test
+zpos      : [0]
+scales    : [1]
+angles    : [0]
+asteps    : 45
+axis      : [0, 1, 1]
+cam_scale : 1.5
+
+# path
+result_path : save-ngp-r2
+save_path   : save-ngp-r2
+log_path    : save-ngp-r2
+
+loss : 
+  name : MSE_LOSS_REGULARISATION
+
+sampling : 
+  stype     : $stype
+  n_samples : $n_samples
+
+rendering :
+  stype : $stype
+
+importance :
+  stype     : $stype
+  n_samples : $n_imps
+
+
+model:
+  name: $mtype
+
+  n_input_dims: 3
+  n_output_dims: 2
+
+  encoding:
+    otype: HashGrid
+    n_levels: 16 ## level of hierachies 
+    n_features_per_level: 2 ## F
+    log2_hashmap_size: 21
+    base_resolution: 16
+    per_level_scale: 1.5
+  
+  ## fast small mlp with tinycudann
+  network:
+    otype: FullyFusedMLP
+    activation: ReLU
+    output_activation: None
+    n_neurons: 64
+    n_hidden_layers: 4
+
+model_ft : $model
+
+dataset : 
+  mode : $mode
+  dname: Medical3D
+  train : 
+    file    : $file
+    scale   : $scale
+    radius  : $radius
+    bsize   : $bs_train
+    modality: $modality 
+    z_scaler: $z_scaler
+    only_downsampling_in_z: $only_downsampling_in_z
+    direction: $direction
+
+  eval :
+    file    : $file
+    scale   : $scale
+    radius  : $radius
+    N_eval  : $N_eval
+    bsize   : $bs_eval
+    modality: $modality 
+    z_scaler: $z_scaler
+    only_downsampling_in_z: $only_downsampling_in_z
+    direction: $direction
+
+  traineval :
+    file    : $file
+    scale   : $scale
+    radius  : $radius
+    N_eval  : $N_eval
+    bsize   : $bs_eval
+    modality: $modality 
+    z_scaler: $z_scaler
+    only_downsampling_in_z: $only_downsampling_in_z
+    direction: $direction
+
+  test :
+    file      : $file
+    scales    : $scales
+    radius    : $radius
+    axis      : $axis
+    angles    : $angles
+    zpos      : $zpos
+    cam_scale : $cam_scale
+    asteps    : $asteps
+    z_scaler  : $z_scaler
+
+dataloader :
+  mode : $mode
+  train :
+    batch_size : 1
+    shuffle : True
+  
+  eval:
+    batch_size : 1
+    shuffle : False
+
+  traineval:
+    batch_size : 1
+    shuffle : False
+
+  test:
+    batch_size : 1
+    shuffle : False
+
+optim :
+  name : Adam
+  lr   : $lr
+  betas: [0.9, 0.99]
+  eps  : 0.000000000000001 ## 1e-15
+
+metrics : 
+  psnr  : True
+  ssim  : True
+  lpips : False
+  avg   : False
+
+lr_decay : 
+  lr_init        : $lr
+  lr_final       : $lr_final
+  max_iter       : $max_iter
+  lr_delay_steps : 1000
+  lr_delay_mult  : 0.01
+
+clip_grad :
+  max_val  : 0.1
+  max_norm : 0.1
+
+ngpmodel:
+  dummy: True

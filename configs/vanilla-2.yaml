@@ -1,0 +1,155 @@
+# training
+max_iter : 100000 ## double gpu
+eval_iter: 50000
+save_iter: 10000
+log_iter : 100
+bs_train : 2048 # batch size 
+bs_eval  : 32768
+bs_test  : $bs_eval
+N_eval   : 
+lr       : 0.002
+lr_final : 0.00002
+workers  : 4
+
+z_scaler : 1
+always_save: True
+alternating_training: absent
+only_downsampling_in_z: False
+direction: axial
+
+# modeling
+stype     : cube
+radius    : 1
+n_samples : 64
+n_imps    : 128
+mtype     : NeRFMLP
+
+# test
+zpos      : [0]
+scales    : [1]
+angles    : [0]
+asteps    : 45
+axis      : [0, 1, 1]
+cam_scale : 1.5
+
+# path
+result_path : save-vanilla-512-256-long-2
+save_path   : save-vanilla-512-256-long-2
+log_path    : save-vanilla-512-256-long-2
+
+loss : 
+  name : Adaptive_MSE_LOSS
+
+sampling : 
+  stype     : z
+  n_samples : $n_samples
+
+rendering :
+  stype : $stype
+
+importance :
+  stype     : $stype
+  n_samples : $n_imps
+
+model : 
+  name    : $mtype
+  netD    : 9
+  netW    : 256
+  in_ch   : 3
+  out_ch  : 2
+  skips   : [4, 9]
+  max_freq: 10
+  p_fns   : ['sin', 'cos']
+
+model_ft : $model
+
+dataset : 
+  mode : $mode
+  dname: Medical3D
+  train : 
+    file    : $file
+    scale   : $scale
+    radius  : $radius
+    bsize   : $bs_train
+    modality: $modality 
+    z_scaler: $z_scaler
+    only_downsampling_in_z: $only_downsampling_in_z
+    direction: $direction
+
+  eval :
+    file    : $file
+    scale   : $scale
+    radius  : $radius
+    N_eval  : $N_eval
+    bsize   : $bs_eval
+    modality: $modality 
+    z_scaler: $z_scaler
+    only_downsampling_in_z: $only_downsampling_in_z
+    direction: $direction
+
+  traineval :
+    file    : $file
+    scale   : $scale
+    radius  : $radius
+    N_eval  : $N_eval
+    bsize   : $bs_eval
+    modality: $modality 
+    z_scaler: $z_scaler
+    only_downsampling_in_z: $only_downsampling_in_z
+    direction : $direction
+
+  test :
+    file      : $file
+    scales    : $scales
+    radius    : $radius
+    axis      : $axis
+    angles    : $angles
+    zpos      : $zpos
+    cam_scale : $cam_scale
+    asteps    : $asteps
+
+dataloader :
+  mode : $mode
+  train :
+    batch_size : 1
+    shuffle : True
+  
+  eval:
+    batch_size : 1
+    shuffle : False
+
+  traineval:
+    batch_size : 1
+    shuffle : False
+
+  test:
+    batch_size : 1
+    shuffle : False
+
+optim :
+  name : Adam
+  lr   : $lr
+  betas: [0.9, 0.999]
+  eps  : 0.000001
+  weight_decay: 0.000001
+
+metrics : 
+  psnr  : True
+  ssim  : True
+  lpips : False
+  avg   : False
+
+lr_decay : 
+  lr_init        : $lr
+  lr_final       : $lr_final
+  max_iter       : $max_iter
+  lr_delay_steps : 1000
+  lr_delay_mult  : 0.01
+
+clip_grad :
+  max_val  : 0.1
+  max_norm : 0.1
+
+
+fullmodel:
+  dummy: True
